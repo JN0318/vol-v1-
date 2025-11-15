@@ -7,7 +7,7 @@ import matplotlib.font_manager as fm
 import os
 
 # =================================================================
-# 0. 環境配置與字體設置 (修正路徑：直接從根目錄讀取字體檔案)
+# 0. 環境配置與字體設置 (最終穩定版：移除了不兼容的 get_cachedir)
 # =================================================================
 
 st.set_page_config(layout="wide")
@@ -15,21 +15,13 @@ st.title("🏐 SV.LEAGUE 男排球員個人數據與歷史分析 (2023-2025 賽�
 st.markdown("---")
 
 # --- 中文字體設置 ---
+# 確保路徑指向 GitHub 根目錄中的字體檔案
 font_path = './NotoSansCJKtc-Regular.otf' 
 
 try:
     if os.path.exists(font_path):
         
-        # 清理 Matplotlib 緩存
-        cache_dir = fm.get_cachedir()
-        for file in os.listdir(cache_dir):
-            if file.startswith('fontlist-'):
-                try:
-                    os.remove(os.path.join(cache_dir, file))
-                except:
-                    pass
-        
-        # 註冊並使用新字體
+        # 僅執行字體註冊 (移除不穩定的緩存清理代碼)
         fm.fontManager.addfont(font_path)
         plt.rcParams['font.family'] = 'Noto Sans CJK TC' 
         plt.rcParams['axes.unicode_minus'] = False 
@@ -52,13 +44,6 @@ except Exception as e:
 
 @st.cache_data
 def load_data():
-    # --- SV.LEAGUE 10 支隊伍列表 ---
-    SVL_TEAMS = [
-        'SUNTORY SUNBIRDS', 'WOLFDOGS NAGOYA', 'PANTHERS', 'JTEKT STINGS', 
-        'OSAKA BLUTEON', 'NIPPON STEEL SAKAI', 'TOKYO GREAT BEARS', 
-        'TORAY ARROWS SHIZUOKA', 'VC FUKUOKA', 'VOLEAS HOKKAIDO'
-    ]
-    
     # --- 1.1 球員個人數據 (2025 賽季模擬數據) ---
     data = {
         '姓名': ['Lopez, M.', 'Muserskiy, D.', 'Nimir, A.', '高橋藍', '西田有志', '蔡沛彰', '柳田将洋', '水町泰杜', '清水邦広', '関田誠大', '古賀太一郎', '深津英臣', '大宅真樹', '山内晶大', '宮浦健人', '彭世坤', '井上航'],
@@ -170,9 +155,7 @@ else:
         # 顯示核心效率指標 
         colA, colB, colC, colD = st.columns(4)
         colA.metric("總得分", f"{player_data['總得分']} 分")
-        # --- 修正後的第 174 行 ---
         colB.metric("進攻決定率", f"{player_data['進攻決定率']:.1f} %", help="成功扣球數 / 總進攻次數")
-        # ------------------------
         colC.metric("接發球成功率", f"{player_data['接發球成功率']:.1f} %", help="成功接發次數 / 總接發次數")
         colD.metric("舉球效率", f"{player_data['舉球效率']:.1f} %", help="舉球成功次數 / 總舉球次數。非舉球員會顯示 0.0 %。")
 
