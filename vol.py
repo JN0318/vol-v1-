@@ -7,21 +7,21 @@ import matplotlib.font_manager as fm
 import os
 
 # =================================================================
-# 0. 環境配置與字體設置 (修正版 - 解決中文亂碼和緩存問題)
+# 0. 環境配置與字體設置 (修正路徑：直接從根目錄讀取字體檔案)
 # =================================================================
 
 st.set_page_config(layout="wide")
-st.title("🏐 SV.LEAGUE 男排球員個人數據與歷史分析 (2023-2025 賽季)") # 標題已更新
+st.title("🏐 SV.LEAGUE 男排球員個人數據與歷史分析 (2023-2025 賽季)")
 st.markdown("---")
 
 # --- 中文字體設置 ---
-font_path = './fonts/NotoSansCJKtc-Regular.otf' 
+# *** 關鍵修正：移除 /fonts/ 路徑，直接在根目錄查找字體檔案 ***
+font_path = './NotoSansCJKtc-Regular.otf' 
 
 try:
-    # 步驟 1: 檢查字體文件是否存在
     if os.path.exists(font_path):
         
-        # 步驟 2: 清理 Matplotlib 緩存 (強制重新讀取字體，解決雲端亂碼關鍵)
+        # 清理 Matplotlib 緩存
         cache_dir = fm.get_cachedir()
         for file in os.listdir(cache_dir):
             if file.startswith('fontlist-'):
@@ -30,14 +30,14 @@ try:
                 except:
                     pass
         
-        # 步驟 3: 註冊並使用新字體
+        # 註冊並使用新字體
         fm.fontManager.addfont(font_path)
         plt.rcParams['font.family'] = 'Noto Sans CJK TC' 
         plt.rcParams['axes.unicode_minus'] = False 
         st.sidebar.success("🎉 中文字體已成功加載！")
         
     else:
-        st.sidebar.error(f"🚨 找不到字體文件於: {font_path}")
+        st.sidebar.error(f"🚨 找不到字體文件於: {font_path}。請確保檔案已上傳到GitHub根目錄。")
         plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial'] 
         plt.rcParams['axes.unicode_minus'] = False
         
@@ -168,62 +168,7 @@ else:
 
         st.subheader("2. 賽季核心表現 (2025 模擬數據)")
         
-        # 顯示核心效率指標 (4 欄位，適用於所有位置，舉球效率非S則顯示 0.0%)
+        # 顯示核心效率指標 
         colA, colB, colC, colD = st.columns(4)
         colA.metric("總得分", f"{player_data['總得分']} 分")
-        colB.metric("進攻決定率", f"{player_data['進攻決定率']:.1f} %", help="成功扣球數 / 總進攻次數")
-        colC.metric("接發球成功率", f"{player_data['接發球成功率']:.1f} %", help="成功接發次數 / 總接發次數")
-        colD.metric("舉球效率", f"{player_data['舉球效率']:.1f} %", help="舉球成功次數 / 總舉球次數。非舉球員會顯示 0.0 %。")
-
-        st.subheader("3. 得分構成分析圖")
-
-        # 繪製單一球員的得分構成圓餅圖
-        score_data = pd.Series({
-            '扣球得分': player_data['扣球得分'],
-            '發球得分': player_data['發球得分'],
-            '攔網得分': player_data['攔網得分']
-        })
-        
-        # 繪製圓餅圖
-        fig, ax = plt.subplots(figsize=(7, 7))
-        # 為了避免中文亂碼，標籤使用較穩定的方式顯示
-        wedges, texts, autotexts = ax.pie(score_data, 
-                                          labels=score_data.index, # 這裡使用中文標籤，依賴字體設置
-                                          autopct='%1.1f%%', 
-                                          startangle=90, 
-                                          colors=['#FF5733', '#33FF57', '#3357FF'])
-        
-        ax.axis('equal') # 確保圓餅圖是圓的
-        ax.set_title(f"{selected_player_name} 得分來源分佈")
-        fig.tight_layout()
-        st.pyplot(fig)
-
-
-    with tab2:
-        st.subheader(f"📜 {player_data['隊伍']} 歷年比賽成績 (2023-2025 聯賽排名)")
-        
-        # 篩選並排序隊伍歷史數據
-        team_history = df_history[df_history['隊伍'] == player_data['隊伍']].sort_values(by='年份', ascending=False)
-        
-        if team_history.empty:
-             st.warning(f"🚨 模擬歷史數據中沒有找到 {player_data['隊伍']} 的紀錄。")
-        else:
-            st.dataframe(
-                team_history.rename(columns={'聯賽排名': '賽季排名'}),
-                use_container_width=True
-            )
-            
-            # 繪製歷史排名趨勢圖
-            plt.figure(figsize=(10, 5))
-            # 確保 X 軸是整數年份，Y 軸是排名
-            sns.lineplot(data=team_history.sort_values(by='年份'), x='年份', y='聯賽排名', marker='o')
-            plt.gca().invert_yaxis() # 排名越小越好，所以Y軸反轉
-            plt.yticks(team_history['聯賽排名'].unique())
-            plt.xticks(team_history['年份'].unique()) # 確保 X 軸顯示整數年份
-            plt.title(f"{player_data['隊伍']} 聯賽排名趨勢")
-            plt.xlabel('年份')
-            plt.ylabel('聯賽排名 (數字越小越好)')
-            st.pyplot(plt.gcf())
-            
-st.markdown("---")
-st.caption("數據來源：模擬 SV.LEAGUE 2025 賽季個人數據與 2023-2025 歷史戰績。")
+        colB.metric("進攻決定率", f"{player_data['進攻決定率']:.1f} %", help="成功扣球數
