@@ -15,7 +15,6 @@ st.title("🏐 SV.LEAGUE 男排球員個人數據與歷史分析 (2023-2025 賽�
 st.markdown("---")
 
 # --- 中文字體設置 ---
-# *** 關鍵修正：移除 /fonts/ 路徑，直接在根目錄查找字體檔案 ***
 font_path = './NotoSansCJKtc-Regular.otf' 
 
 try:
@@ -171,4 +170,58 @@ else:
         # 顯示核心效率指標 
         colA, colB, colC, colD = st.columns(4)
         colA.metric("總得分", f"{player_data['總得分']} 分")
-        colB.metric("進攻決定率", f"{player_data['進攻決定率']:.1f} %", help="成功扣球數
+        # --- 修正後的第 174 行 ---
+        colB.metric("進攻決定率", f"{player_data['進攻決定率']:.1f} %", help="成功扣球數 / 總進攻次數")
+        # ------------------------
+        colC.metric("接發球成功率", f"{player_data['接發球成功率']:.1f} %", help="成功接發次數 / 總接發次數")
+        colD.metric("舉球效率", f"{player_data['舉球效率']:.1f} %", help="舉球成功次數 / 總舉球次數。非舉球員會顯示 0.0 %。")
+
+        st.subheader("3. 得分構成分析圖")
+
+        # 繪製單一球員的得分構成圓餅圖
+        score_data = pd.Series({
+            '扣球得分': player_data['扣球得分'],
+            '發球得分': player_data['發球得分'],
+            '攔網得分': player_data['攔網得分']
+        })
+        
+        # 繪製圓餅圖
+        fig, ax = plt.subplots(figsize=(7, 7))
+        wedges, texts, autotexts = ax.pie(score_data, 
+                                          labels=score_data.index,
+                                          autopct='%1.1f%%', 
+                                          startangle=90, 
+                                          colors=['#FF5733', '#33FF57', '#3357FF'])
+        
+        ax.axis('equal') 
+        ax.set_title(f"{selected_player_name} 得分來源分佈")
+        fig.tight_layout()
+        st.pyplot(fig)
+
+
+    with tab2:
+        st.subheader(f"📜 {player_data['隊伍']} 歷年比賽成績 (2023-2025 聯賽排名)")
+        
+        team_history = df_history[df_history['隊伍'] == player_data['隊伍']].sort_values(by='年份', ascending=False)
+        
+        if team_history.empty:
+             st.warning(f"🚨 模擬歷史數據中沒有找到 {player_data['隊伍']} 的紀錄。")
+        else:
+            st.dataframe(
+                team_history.rename(columns={'聯賽排名': '賽季排名'}),
+                use_container_width=True
+            )
+            
+            # 繪製歷史排名趨勢圖
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(data=team_history.sort_values(by='年份'), x='年份', y='聯賽排名', marker='o')
+            plt.gca().invert_yaxis() 
+            plt.yticks(team_history['聯賽排名'].unique())
+            plt.xticks(team_history['年份'].unique()) 
+            plt.title(f"{player_data['隊伍']} 聯賽排名趨勢")
+            plt.xlabel('年份')
+            plt.ylabel('聯賽排名 (數字越小越好)')
+            st.pyplot(plt.gcf())
+            
+st.markdown("---")
+st.caption("數據來源：模擬 SV.LEAGUE 2025 賽季個人數據與 2023-2025 歷史戰績。")
